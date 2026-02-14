@@ -9,7 +9,7 @@ export class WebLarekApi {
   }
 
   public getProducts(): Promise<IProduct[]> {
-    return this.api.get<IProduct[]>('/product/');
+    return this.api.get<{ total: number; items: IProduct[] }>('/product/').then(response => response.items);
   }
 
   public sendOrder(order: IOrder): Promise<object> {
