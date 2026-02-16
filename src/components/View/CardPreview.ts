@@ -27,7 +27,6 @@ export class CardPreview extends BaseCard<CardPreviewData> {
         this.button = ensureElement<HTMLButtonElement>('.card__button', this.container);
         this.category = ensureElement('.card__category', this.container);
 
-        // Клик: просто эмитим событие, не проверяем корзину
         this.button.addEventListener('click', () => {
             if (!this.productId) return;
             const action = this.button.dataset.action;

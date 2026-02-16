@@ -27,10 +27,8 @@ export class CardCatalog extends BaseCard<CardCatalogData> {
     render(data?: Partial<CardCatalogData>): HTMLElement {
         if (!data) return this.container;
 
-        // Используем базовый метод
         this.renderBase(data);
 
-        // Только уникальное для дочернего класса
         if (data.image) this.setImage(this.image, `${CDN_URL}${data.image.replace(/\.svg$/i, '.png')}`);
         if (data.category) {
             this.category.textContent = data.category;
