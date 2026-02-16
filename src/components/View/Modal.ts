@@ -28,6 +28,10 @@ export class Modal extends Component<ModalData> {
         this.content.replaceChildren(value);
     }
 
+    public attachContent(component: { render: () => void; attachTo: (parent: HTMLElement) => void }) {
+        component.attachTo(this.content);
+    }
+
     open() {
         this.container.classList.add('modal_active');
     }

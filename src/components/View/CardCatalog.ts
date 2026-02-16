@@ -2,6 +2,7 @@ import { BaseCard, BaseCardData } from "./Card";
 import { IEvents } from "../base/Events";
 import { ensureElement } from '../../utils/utils';
 import { CDN_URL } from "../../utils/constants";
+import { categoryMap } from "../../utils/constants";
 
 interface CardCatalogData extends BaseCardData {
     image: string;
@@ -11,33 +12,35 @@ interface CardCatalogData extends BaseCardData {
 export class CardCatalog extends BaseCard<CardCatalogData> {
     protected image: HTMLImageElement;
     protected category: HTMLElement;
-    private categoryMap: Record<string, string> = {
-        'софт-скил': 'soft',
-        'хард-скил': 'hard',
-        'кнопка': 'button',
-        'дополнительное': 'additional',
-        'другое': 'other'
-    };
 
     constructor(protected events: IEvents, container: HTMLElement) {
-        super(container);
+        super(container, events);
+
         this.image = ensureElement<HTMLImageElement>('.card__image', this.container);
         this.category = ensureElement('.card__category', this.container);
 
         this.container.addEventListener('click', () => {
-            this.events.emit('card:select', {id: this.id});
+            this.events.emit('card:select', { id: this.container.dataset.id });
         });
     }
 
-    set categoryName(value: string) {
-        this.category.textContent = value;
-        this.category.className = 'card__category';
-        const modifier = this.categoryMap[value] ?? 'other';
-        this.category.classList.add(`card__category_${modifier}`);
-    }
+    render(data?: Partial<CardCatalogData>): HTMLElement {
+        if (!data) return this.container;
 
-    set imageSrc(value: string) {
-        this.setImage(this.image, `${CDN_URL}${value.replace(/\.svg$/i, '.png')}`);
-    }
+        // Используем базовый метод
+        this.renderBase(data);
 
+        // Только уникальное для дочернего класса
+        if (data.image) this.setImage(this.image, `${CDN_URL}${data.image.replace(/\.svg$/i, '.png')}`);
+        if (data.category) {
+            this.category.textContent = data.category;
+            this.category.className = 'card__category';
+            const modifier = categoryMap[data.category as keyof typeof categoryMap] ?? 'other';
+            this.category.classList.add(modifier);
+        }
+
+        if (data.id) this.container.dataset.id = data.id;
+
+        return this.container;
+    }
 }

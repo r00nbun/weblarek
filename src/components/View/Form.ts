@@ -5,7 +5,7 @@ import { ensureElement } from '../../utils/utils';
 export abstract class BaseForm<T> extends Component<T> {
     protected form: HTMLFormElement;
     protected submitButton: HTMLButtonElement;
-    protected errorsElement?: HTMLElement;
+    private errorsElement?: HTMLElement;
 
     constructor(protected events: IEvents, container: HTMLElement) {
         super(container);
@@ -13,6 +13,8 @@ export abstract class BaseForm<T> extends Component<T> {
         this.form = this.container as HTMLFormElement;
         this.submitButton = ensureElement<HTMLButtonElement>('button[type="submit"]', this.form);
         this.errorsElement = this.form.querySelector('.form__errors') ?? undefined;
+
+        this.submitButton.disabled = true;
 
         this.form.addEventListener('submit', (e) => {
             e.preventDefault();

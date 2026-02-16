@@ -1,39 +1,21 @@
+import { IEvents } from '../base/Events';
 import { IBuyer, TPayment } from '../../types';
-
-interface IValidationErrors {
-  payment?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-}
 
 export class Buyer {
   private payment: TPayment = '';
-  private email: string = '';
-  private phone: string = '';
-  private address: string = '';
+  private email = '';
+  private phone = '';
+  private address = '';
 
-  setPayment(payment: TPayment): void {
-    this.payment = payment;
-  }
+  constructor(private events: IEvents) {}
 
-  setEmail(email: string): void {
-    this.email = email;
-  }
-
-  setPhone(phone: string): void {
-    this.phone = phone;
-  }
-
-  setAddress(address: string): void {
-    this.address = address;
-  }
-
-  setData(data: Partial<IBuyer>): void {
+  setData(data: Partial<IBuyer>) {
     if (data.payment !== undefined) this.payment = data.payment;
     if (data.email !== undefined) this.email = data.email;
     if (data.phone !== undefined) this.phone = data.phone;
     if (data.address !== undefined) this.address = data.address;
+
+    this.events.emit('buyer:change');
   }
 
   getData(): IBuyer {
@@ -41,20 +23,21 @@ export class Buyer {
       payment: this.payment,
       email: this.email,
       phone: this.phone,
-      address: this.address,
+      address: this.address
     };
   }
 
-  clear(): void {
+  clear() {
     this.payment = '';
     this.email = '';
     this.phone = '';
     this.address = '';
+    this.events.emit('buyer:change');
   }
 
-  validate(): IValidationErrors {
-    const errors: IValidationErrors = {};
-    if (!this.payment) errors.payment = 'Не выбран вид оплаты';
+  validate() {
+    const errors: Record<string, string> = {};
+    if (!this.payment) errors.payment = 'Выберите способ оплаты';
     if (!this.email) errors.email = 'Укажите email';
     if (!this.phone) errors.phone = 'Укажите телефон';
     if (!this.address) errors.address = 'Укажите адрес';

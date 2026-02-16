@@ -2,11 +2,13 @@ import { BaseCard, BaseCardData } from "./Card";
 import { IEvents } from "../base/Events";
 import { ensureElement } from '../../utils/utils';
 import { CDN_URL } from "../../utils/constants";
+import { categoryMap } from "../../utils/constants";
 
 interface CardPreviewData extends BaseCardData {
     image: string;
     description: string;
     category: string;
+    inBasket: boolean;
 }
 
 export class CardPreview extends BaseCard<CardPreviewData> {
@@ -15,66 +17,68 @@ export class CardPreview extends BaseCard<CardPreviewData> {
     protected button: HTMLButtonElement;
     protected category: HTMLElement;
 
-    protected inBasket: boolean = false;
-    private categoryMap: Record<string, string> = {
-        'софт-скил': 'soft',
-        'хард-скил': 'hard',
-        'кнопка': 'button',
-        'дополнительное': 'additional',
-        'другое': 'other'
-    };
+    private productId: string = '';
 
     constructor(protected events: IEvents, container: HTMLElement) {
-        super(container);
+        super(container, events);
 
         this.text = ensureElement('.card__text', this.container);
         this.image = ensureElement<HTMLImageElement>('.card__image', this.container);
         this.button = ensureElement<HTMLButtonElement>('.card__button', this.container);
         this.category = ensureElement('.card__category', this.container);
 
-        this.button.addEventListener('click', () => this.toggleBasket());
-        this.updateButton();
+        // Клик: просто эмитим событие, не проверяем корзину
+        this.button.addEventListener('click', () => {
+            if (!this.productId) return;
+            const action = this.button.dataset.action;
+            if (action === 'add') {
+                this.events.emit('basket:add', { id: this.productId });
+            } else if (action === 'remove') {
+                this.events.emit('basket:remove', { id: this.productId });
+            }
+        });
     }
 
-    set basketState(value: boolean) {
-        this.inBasket = value;
-        this.updateButton();
+    public showIn(parent: HTMLElement, data: Partial<CardPreviewData>): void {
+        this.render(data);
+        parent.replaceChildren(this.container);
     }
 
-    private toggleBasket() {
-        this.inBasket = !this.inBasket;
+    render(data: Partial<CardPreviewData>): HTMLElement {
+        if (!data) return this.container;
 
-        this.events.emit<{ id: string }>(
-            this.inBasket ? 'basket:add' : 'basket:remove',
-            { id: this.id }
-        );
-        this.updateButton();
-    }
+        if (data.id) this.productId = data.id;
 
-    private updateButton() {
-        const disabled = this.isPriceless;
-        this.button.disabled = disabled;
+        this.renderBase(data);
 
-        if (disabled) {
-            this.button.textContent = 'Недоступно';
-            return;
+        if (data.image) {
+            this.setImage(this.image, `${CDN_URL}${data.image.replace(/\.svg$/i, '.png')}`);
         }
-        
-        this.button.textContent = this.inBasket ? 'Удалить из корзины' : 'Купить';
-    }
 
-    set categoryName(value: string) {
-        this.category.textContent = value; 
-        this.category.className = 'card__category'; 
-        const modifier = this.categoryMap[value] ?? 'other';
-        this.category.classList.add(`card__category_${modifier}`);
-    }
+        if (data.description) this.text.textContent = data.description;
 
-    set description(value: string) {
-        this.text.textContent = value;
-    }
+        if (data.category) {
+            this.category.textContent = data.category;
+            this.category.className = 'card__category';
+            const modifier = categoryMap[data.category as keyof typeof categoryMap] ?? 'other';
+            this.category.classList.add(modifier);
+        }
 
-    set imageSrc(value: string) {
-        this.setImage(this.image, `${CDN_URL}${value.replace(/\.svg$/i, '.png')}`);
+        if (data.inBasket !== undefined || data.price !== undefined) {
+            const disabled = data.price == null;
+            this.button.disabled = disabled;
+            if (disabled) {
+                this.button.textContent = 'Недоступно';
+                this.button.dataset.action = '';
+            } else if (data.inBasket) {
+                this.button.textContent = 'Удалить из корзины';
+                this.button.dataset.action = 'remove';
+            } else {
+                this.button.textContent = 'Купить';
+                this.button.dataset.action = 'add';
+            }
+        }
+
+        return this.container;
     }
 }
