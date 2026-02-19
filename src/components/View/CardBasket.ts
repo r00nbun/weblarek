@@ -1,9 +1,9 @@
 import { IEvents } from '../base/Events';
 import { ensureElement } from '../../utils/utils';
-import { BaseCard, BaseCardData } from './Card';
 import { IProduct } from '../../types';
+import { BaseCard, BaseCardData } from "./Card";
 
-export interface CardBasketData extends BaseCardData {
+interface CardBasketData extends BaseCardData {
     product: IProduct;
     index: number;
 }
@@ -13,30 +13,25 @@ export class CardBasket extends BaseCard<CardBasketData> {
     protected indexElement: HTMLElement;
 
     constructor(protected events: IEvents, container: HTMLElement) {
-        super(container, events);
+        super(container);
 
         this.deleteButton = ensureElement<HTMLButtonElement>('.basket__item-delete', this.container);
         this.indexElement = ensureElement('.basket__item-index', this.container);
 
         this.deleteButton.addEventListener('click', () => {
-            this.events.emit('basket:remove', { id: this.container.dataset.id });
+            this.events.emit<{ id: string }>('basket:remove', {
+                id: this._id
+            });
         });
     }
 
-    render(data?: Partial<CardBasketData>): HTMLElement {
-        if (!data) return this.container;
+    set product(value: IProduct) {
+        this.id = value.id;
+        this.title = value.title;
+        this.price = value.price ?? 0;
+    }
 
-        if (data.product) {
-            this.container.dataset.id = data.product.id;
-            this.titleElement.textContent = data.product.title;
-            this.priceElement.textContent =
-                data.product.price != null ? `${data.product.price} синапсов` : 'Бесценно';
-        }
-
-        if (data.index !== undefined) {
-            this.indexElement.textContent = String(data.index);
-        }
-
-        return this.container;
+    set index(value: number) {
+        this.indexElement.textContent = value.toString();
     }
 }

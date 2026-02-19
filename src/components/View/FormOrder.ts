@@ -1,71 +1,53 @@
 import { BaseForm } from './Form';
 import { IEvents } from '../base/Events';
+import { ensureElement } from '../../utils/utils';
+import { TPayment, IBuyer } from '../../types';
 
-export interface OrderFormData {
-    payment: string | null;
+interface OrderFormData {
     address: string;
-}
-
-interface OrderFormRenderData extends Partial<OrderFormData> {
-    valid?: boolean;
-    errors?: Record<string, string>;
+    payment: TPayment;
 }
 
 export class OrderForm extends BaseForm<OrderFormData> {
-    protected paymentButtons: HTMLButtonElement[];
+    protected cashButton: HTMLButtonElement;
+    protected cardButton: HTMLButtonElement;
     protected addressInput: HTMLInputElement;
 
     constructor(events: IEvents, container: HTMLElement) {
         super(events, container);
 
-        this.paymentButtons = Array.from(this.form.querySelectorAll('.order__buttons .button'));
-        this.addressInput = this.form.querySelector<HTMLInputElement>('input[name="address"]')!;
-
-        this.paymentButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.events.emit('order:payment-selected', { payment: btn.name });
-            });
+        // 1️⃣ Оплата
+        this.cashButton = ensureElement<HTMLButtonElement>('button[name="cash"]', this.container);
+        this.cashButton.addEventListener('click', () => {
+            events.emit('payment:changed', { payment: 'cash' })
         });
 
+        this.cardButton = ensureElement<HTMLButtonElement>('button[name="card"]', this.container);
+        this.cardButton.addEventListener('click', () => {
+            events.emit('payment:changed', { payment: 'card' })
+        });
+
+        // 2️⃣ Адрес
+        this.addressInput = ensureElement<HTMLInputElement>('input[name="address"]', this.form);
         this.addressInput.addEventListener('input', () => {
-            this.events.emit('order:address-changed', { address: this.addressInput.value });
+            events.emit('address:changed', { address: this.addressInput.value })
         });
     }
 
-    render(data?: OrderFormRenderData): HTMLElement {
-        if (data?.payment !== undefined) {
-            this.paymentButtons.forEach(btn => {
-                btn.classList.remove('button_alt_active');
-                btn.classList.add('button_alt');
-            });
-            const active = this.paymentButtons.find(btn => btn.name === data.payment);
-            if (active) {
-                active.classList.remove('button_alt');
-                active.classList.add('button_alt_active');
-            }
-        }
-
-        if (data?.address !== undefined) {
-            this.addressInput.value = data.address;
-        }
-
-        if (data?.errors) {
-            this.showErrors(data.errors);
-        }
-
-        if (data?.valid !== undefined) {
-            this.valid = data.valid;
-        }
-
-        return this.container;
+    togglePaymentButton(payment: TPayment): void {
+        const altActiveClassName = "button_alt-active";
+        this.cashButton.classList.toggle(altActiveClassName, payment === "cash");
+        this.cardButton.classList.toggle(altActiveClassName, payment === "card",);
     }
 
-    protected validate(): Record<string, string | undefined> {
-        return {};
+    checkValidation(message: Partial<Record<keyof IBuyer, string>>): boolean {
+        this.error = "";
+        this.error = message.payment || message.address || "";
+        return !message.payment && !message.address;
     }
 
     protected onSubmit() {
         super.onSubmit();
-        this.events.emit('order:submit');
+        this.events.emit('form:next');
     }
 }

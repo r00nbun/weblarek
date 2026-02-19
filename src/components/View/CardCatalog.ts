@@ -14,31 +14,24 @@ export class CardCatalog extends BaseCard<CardCatalogData> {
     protected category: HTMLElement;
 
     constructor(protected events: IEvents, container: HTMLElement) {
-        super(container, events);
-
+        super(container);
         this.image = ensureElement<HTMLImageElement>('.card__image', this.container);
         this.category = ensureElement('.card__category', this.container);
 
         this.container.addEventListener('click', () => {
-            this.events.emit('card:select', { id: this.container.dataset.id });
+            this.events.emit('card:select', {id: this._id});
         });
     }
 
-    render(data?: Partial<CardCatalogData>): HTMLElement {
-        if (!data) return this.container;
-
-        this.renderBase(data);
-
-        if (data.image) this.setImage(this.image, `${CDN_URL}${data.image.replace(/\.svg$/i, '.png')}`);
-        if (data.category) {
-            this.category.textContent = data.category;
-            this.category.className = 'card__category';
-            const modifier = categoryMap[data.category as keyof typeof categoryMap] ?? 'other';
-            this.category.classList.add(modifier);
-        }
-
-        if (data.id) this.container.dataset.id = data.id;
-
-        return this.container;
+    set categoryName(value: string) {
+        this.category.textContent = value;
+        this.category.className = 'card__category';
+        const modifier = categoryMap[value as keyof typeof categoryMap] ?? 'other';
+        this.category.classList.add(`${modifier}`);
     }
+
+    set imageSrc(value: string) {
+        this.setImage(this.image, `${CDN_URL}${value.replace(/\.svg$/i, '.png')}`);
+    }
+
 }

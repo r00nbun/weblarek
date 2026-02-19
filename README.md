@@ -221,6 +221,9 @@ Presenter - презентер содержит основную логику п
 Методы и сеттеры:  
 `set counter(value: number)` - устанавливает отображаемое количество товаров в корзине.  
 
+События:  
+При клике на basketButton генерируется событие `basket:open`.  
+
 ##### Класс GalleryView
 Отвечает за отображение галереи товаров каталога.
 
@@ -229,9 +232,12 @@ Presenter - презентер содержит основную логику п
 
 Поля класса:  
 `container: HTMLElement` - контейнер для рендеринга карточек.  
+`events: EventEmitter` - объект для генерации и обработки событий.  
 
 Методы:  
-`render(products: IProduct[]): void` - рендер: передаются данные карточки, создаётся экземпляр CardCatalog с передачей ивентов и клоном шаблона карточки.  
+`render(cards: HTMLElement[]): void` - отображает переданные элементы в контейнере, заменяя текущее содержимое.  
+`set items(cards: (HTMLElement | { render: () => HTMLElement })[])` - устанавливает элементы галереи.  
+`clear(): void` - очищает контейнер галереи.  
 
 ##### Класс Modal
 Отвечает за отображение модальных окон.
@@ -244,10 +250,13 @@ Presenter - презентер содержит основную логику п
 `content: HTMLElement` - контейнер для содержимого модального окна.  
 
 Методы и сеттеры:  
-`contentElement: HTMLElement` - задает содержимое модального окна.  
-`attachContent(component: { render: () => void; attachTo: (parent: HTMLElement) => void }): void` - прикрепление стороннего компонента в контейнер модального окна.  
+`set contentElement(value: HTMLElement | Component<any>)` - устанавливает содержимое модального окна.  
+`attachContent(component: { render: () => void; attachTo: (parent: HTMLElement) => void })` - прикрепление стороннего компонента в контейнер модального окна.  
 `open(): void` - открывает модальное окно.  
 `close(): void` - закрывает модальное окно.  
+
+События:  
+При клике на кнопку закрытия или на затемнённый фон модального окна выполняется закрытие окна.  
 
 ##### Класс Basket
 Отвечает за отображение корзины в модальном окне.  
@@ -265,21 +274,25 @@ Presenter - презентер содержит основную логику п
 `set total(value: number)` - устанавливает общую стоимость товаров в корзине.  
 `set canCheckout(value: boolean)` - управляет доступностью кнопки оформления заказа. Если true - кнопка активна. Если false - кнопка деактивирована.  
 
+События:  
+При клике на кнопку генерируется событие `order:open`.  
+
 ##### Абстрактный класс BaseCard
 Отвечает за базовое отображение карточки товара.
 Используется как родительский класс для конкретных типов карточек.
 
 Конструктор:  
-`constructor(container: HTMLElement, protected events: IEvents)` - в конструктор передаётся DOM-элемент карточки и объект для генерации и обработки событий.  
+`constructor(container: HTMLElement)` - в конструктор передаётся DOM-элемент карточки.  
 
 Поля класса:  
 `titleElement: HTMLElement` - элемент отображения названия товара.  
 `priceElement: HTMLElement` - элемент отображения цены товара.  
+`_id: string` - внутренний идентификатор товара.  
 
 Методы:  
-`renderBase(data?: Partial<BaseCardData>): void` - рендер:  
-`data.title` - обновляет текст заголовка.  
-`data.price` - обновляет текст цены.  
+`set title(value: string)` - устанавливает название товара.  
+`set price(value: number | null)` - устанавливает цену товара.  
+`set id(value: string)` - устанавливает внутренний идентификатор товара.  
 
 ##### Класс CardBasket
 Отвечает за отображение товара внутри корзины и обработку его удаления.
@@ -293,9 +306,11 @@ Presenter - презентер содержит основную логику п
 `indexElement: HTMLElement` - количество позиций в корзине.  
 
 Методы:  
-`render(data?: Partial<CardBasketData>): HTMLElement` - рендер:  
-`data.product` - обновляет id, заголовок и цену продукта.  
-`data.index` - обновляет текст индекса товара.  
+`set product(value: IProduct)` - устанавливает данные товара.  
+`set index(value: number)` - устанавливает отображаемый индекс товара.  
+
+События:  
+При клике на deleteButton генерируется событие `basket:remove`.  
 
 ##### Класс CardCatalog
 Отвечает за отображение карточки товара в каталоге и обработку выбора товара для просмотра подробной информации.
@@ -309,9 +324,11 @@ Presenter - презентер содержит основную логику п
 `category: HTMLElement` - элемент отображения категории.  
 
 Методы:  
-`render(data?: Partial<CardCatalogData>): HTMLElement` - рендер:  
-`data.image` - устанавливает изображение товара.  
-`data.category` - обновляется текст категории и добавляется CSS-модификатор.  
+`set categoryName(value: string)` - устанавливает название категории и CSS-модификатор.   
+`set imageSrc(value: string)` - устанавливает изображение товара.  
+
+События:  
+При клике на карточку генерируется событие `card:select`.  
 
 ##### Класс CardPreview
 Отвечает за отображение подробной карточки товара в модальном окне, а также за добавление и удаление товара из корзины.
@@ -327,12 +344,15 @@ Presenter - презентер содержит основную логику п
 `category: HTMLElement` - элемент отображения категории.  
 
 Методы:  
-`showIn(parent: HTMLElement, data: Partial<CardPreviewData>): void` - рендер в указанный родительский элемент.  
-`render(data: Partial<CardPreviewData>): HTMLElement` - рендер:  
-`data.description` - обновляет текст описания.  
-`data.image` - устанавливает изображение товара.  
-`data.category` - обновляется текст категории и добавляется CSS-модификатор.  
-`data.inBasket` или `data.price` - обновляется текст и действие кнопки.  
+`set onButtonClick(handler: () => void)` - назначает обработчик клика на кнопку.  
+`set buttonText(value: string)` - устанавливает текст кнопки.  
+`set buttonDisabled(value: boolean)` - включает или отключает кнопку.  
+`set categoryName(value: string)` - устанавливает название категории и CSS-модификатор.  
+`set description(value: string)` - устанавливает текст описания товара.  
+`set imageSrc(value: string)` - устанавливает изображение товара.  
+
+События:  
+`${form.name}:submit` – генерируется при отправке формы (submit), после того как форма прошла внутреннюю обработку onSubmit.  
 
 ##### Класс BaseForm
 Абстрактный базовый класс для форм.
@@ -346,10 +366,12 @@ Presenter - презентер содержит основную логику п
 `errorsElement?: HTMLElement` - блок для ошибок.  
 
 Методы:  
-`updateValidity(): void` - проверка валидности формы.  
-`showErrors(errors: Record<string, string | undefined>): void` - отображает ошибки формы.  
-`validate(): Record<string, string | undefined>` - абстрактный метод, реализуемый в дочерних классах для проверки полей форм и возврата ошибок.  
-`onSubmit(): void` - вызывает событие с именем формы.  
+`set error(message: string)` - устанавливает сообщение об ошибке формы.  
+`setSubmitEnabled(enabled: boolean): void` - включает или отключает кнопку отправки формы.  
+`abstract checkValidation(message: Partial<Record<keyof IBuyer, string>>): boolean` - абстрактный метод для проверки валидности формы с переданными сообщениями ошибок.  
+
+События:  
+При отправке формы (submit) генерируется событие `${form.name}:submit`.  
 
 ##### Класс FormContact
 Отвечает за отображение и валидацию формы контактов (email и телефон) пользователя в процессе оформления заказа.
@@ -362,10 +384,13 @@ Presenter - презентер содержит основную логику п
 `emailInput: HTMLInputElement` - поле для ввода email.  
 `phoneInput: HTMLInputElement` - поле для ввода телефона.  
 
-Методы:  
-`render(data?: { email?: string; phone?: string; valid?: boolean; errors?: Record<string, string> }): HTMLElement` - рендер:  
-`validate(): Record<string, string | undefined>` - проверка валидности полей формы.  
-`onSubmit(): void` - обработка отправки формы.  
+Методы:   
+`checkValidation(message: Partial<Record<keyof IBuyer, string>>): boolean` - проверяет валидность формы по сообщениям об ошибках и устанавливает сообщение в элемент ошибок.  
+
+События:  
+При вводе в emailInput генерируется событие `email:changed`.  
+При вводе в phoneInput генерируется событие `phone:changed`.  
+При отправке формы (submit) генерируется событие `${form.name}:submit`.  
 
 ##### Класс FormOrder
 Отвечает за отображение и валидацию формы контактов (способа оплаты и адреса) пользователя в процессе оформления заказа.
@@ -375,17 +400,19 @@ Presenter - презентер содержит основную логику п
 `constructor(events: IEvents, container: HTMLElement)` - в конструктор передаётся объект для генерации и обработки событий, DOM-элемент формы, модель покупателя, из которой берутся и в которую записываются данные.  
 
 Поля класса:
-`paymentButtons: HTMLButtonElement[]` - кнопки выбора метода оплаты.  
+`cashButton: HTMLButtonElement` - кнопка выбора оплаты наличными.  
+`cardButton: HTMLButtonElement` - кнопка выбора оплаты картой.  
 `addressInput: HTMLInputElement` - поле для ввода адреса.  
 
 Методы:  
-`render(data?: OrderFormRenderData): HTMLElement` - рендер:  
-`data.payment` - активирует кнопку выбора типа оплаты.  
-`data.address` - отображает значения поля адреса.  
-`data.errors` - отображает ошибки формы.  
-`data.valid` - обновляет состояние кнопки оплаты.  
-`validate(): Record<string, string | undefined>` - проверяет заполнение полей формы, возвращает объект с ошибками только для полей данного класса.  
-`onSubmit()` - вызывает событие с именем формы.  
+`togglePaymentButton(payment: TPayment): void` - переключает активное состояние кнопок оплаты в зависимости от выбранного метода.  
+`checkValidation(message: Partial<Record<keyof IBuyer, string>>): boolean` - проверяет валидность формы по сообщениям об ошибках и устанавливает сообщение в элемент ошибок.  
+
+События:  
+При клике на cashButton генерируется событие `payment:changed`.  
+При клике на cardButton генерируется событие `payment:changed`.  
+При вводе в форму генерируется событие `address:changed`.  
+При отправке формы (submit) генерируются события `${form.name}:submit` и `form:next`.  
 
 ##### Класс SuccessForm
 Отвечает за отображение окна успешного оформления заказа.
@@ -399,3 +426,6 @@ Presenter - презентер содержит основную логику п
 
 Методы и сеттеры:  
 `set total(value: number)` - устанавливает текст в элементе с указанием списанной (общей) суммы.  
+
+События:  
+При клике на кнопку генерируется событие `success:close`.  

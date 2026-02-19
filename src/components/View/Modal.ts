@@ -24,8 +24,12 @@ export class Modal extends Component<ModalData> {
         });
     }
 
-    set contentElement(value: HTMLElement) {
-        this.content.replaceChildren(value);
+    set contentElement(value: HTMLElement | Component<any>) {
+        if (value instanceof Component) {
+            this.content.replaceChildren(value.render());
+        } else {
+            this.content.replaceChildren(value);
+        }
     }
 
     public attachContent(component: { render: () => void; attachTo: (parent: HTMLElement) => void }) {
@@ -38,7 +42,6 @@ export class Modal extends Component<ModalData> {
 
     close() {
         this.container.classList.remove('modal_active');
-        this.events.emit('modal:close');
     }
 }
 

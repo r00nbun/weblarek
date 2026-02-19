@@ -1,20 +1,19 @@
 import { Component } from '../base/Component';
 import { IEvents } from '../base/Events';
 import { ensureElement } from '../../utils/utils';
+import { IBuyer } from '../../types';
 
 export abstract class BaseForm<T> extends Component<T> {
     protected form: HTMLFormElement;
     protected submitButton: HTMLButtonElement;
-    private errorsElement?: HTMLElement;
+    protected errorsElement?: HTMLElement;
 
     constructor(protected events: IEvents, container: HTMLElement) {
         super(container);
 
         this.form = this.container as HTMLFormElement;
         this.submitButton = ensureElement<HTMLButtonElement>('button[type="submit"]', this.form);
-        this.errorsElement = this.form.querySelector('.form__errors') ?? undefined;
-
-        this.submitButton.disabled = true;
+        this.errorsElement = ensureElement<HTMLElement>('.form__errors', this.form);
 
         this.form.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -22,28 +21,18 @@ export abstract class BaseForm<T> extends Component<T> {
         });
     }
 
-    protected showErrors(errors: Record<string, string | undefined>) {
+    set error(message: string) {
         if (!this.errorsElement) return;
-        const messages = Object.values(errors).filter(Boolean);
-        this.errorsElement.textContent = messages.join(', ');
+        this.errorsElement.textContent = message;
     }
 
-    protected abstract validate(): Record<string, string | undefined>;
-
-    public updateValidity() {
-        const errors = this.validate();
-        this.showErrors(errors);
-
-        const hasErrors = Object.values(errors).some(Boolean);
-        this.valid = !hasErrors;
+    setSubmitEnabled(enabled: boolean): void {
+        this.submitButton.disabled = !enabled;
     }
+
+    abstract checkValidation(message: Partial<Record<keyof IBuyer, string>>): boolean
 
     protected onSubmit() {
         this.events.emit(`${this.form.name}:submit`);
     }
-
-    set valid(value: boolean) {
-        this.submitButton.disabled = !value;
-    }
 }
-

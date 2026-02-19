@@ -9,7 +9,7 @@ export class ProductCatalog {
 
   setProducts(products: IProduct[]): void {
     this.products = products;
-    this.events.emit('catalog:change');
+    this.events.emit('catalog:change', this.products);
   }
 
   getProducts(): IProduct[] {

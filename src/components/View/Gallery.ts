@@ -1,28 +1,26 @@
-import { IEvents } from '../base/Events';
-import { CardCatalog } from './CardCatalog';
-import { cloneTemplate } from '../../utils/utils';
-import { IProduct } from '../../types';
+import { EventEmitter } from '../base/Events';
 
-export class GalleryView {
-    protected container: HTMLElement;
+export class Gallery {
+  protected container: HTMLElement;
+  protected events: EventEmitter;
 
-    constructor(protected events: IEvents, container: HTMLElement) {
-        this.container = container;
-    }
+  constructor(events: EventEmitter, container: HTMLElement) {
+    this.events = events;
+    this.container = container;
+  }
 
-    render(products: IProduct[]) {
-        const cards: HTMLElement[] = products.map(product => {
-            const card = new CardCatalog(this.events, cloneTemplate('#card-catalog'));
-            card.render({
-                id: product.id,
-                title: product.title,
-                price: product.price ?? 0,
-                image: product.image,
-                category: product.category
-            });
-            return card.render();
-        });
+  render(cards: HTMLElement[]): void {
+    this.container.replaceChildren(...cards);
+  }
 
-        this.container.replaceChildren(...cards);
-    }
+  set items(cards: (HTMLElement | { render: () => HTMLElement })[]) {
+    const elements = cards.map(card => 
+      'render' in card ? card.render() : card
+    );
+    this.render(elements);
+  }
+
+  clear(): void {
+    this.container.replaceChildren();
+  }
 }
